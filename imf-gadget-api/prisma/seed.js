@@ -4,33 +4,33 @@ const { generateCodename } = require('../utils/codeGenerator');
 
 const prisma = new PrismaClient();
 
-async function seedDatabase() {
+async function main() {
   try {
     // Create admin user
-    const adminPassword = await bcrypt.hash('mission_impossible', 10);
+    const adminPassword = await bcrypt.hash('mission1', 10);
     await prisma.user.create({
       data: {
-        username: 'ethan_hunt',
+        username: 'User-admin1',
         password: adminPassword,
         role: 'ADMIN'
       }
     });
 
     // Create handler user
-    const handlerPassword = await bcrypt.hash('tech_wizard', 10);
+    const handlerPassword = await bcrypt.hash('mission2', 10);
     await prisma.user.create({
       data: {
-        username: 'benji_dunn',
+        username: 'User-handler1',
         password: handlerPassword,
         role: 'HANDLER'
       }
     });
 
     // Create regular agent user
-    const agentPassword = await bcrypt.hash('rogue_nation', 10);
+    const agentPassword = await bcrypt.hash('mission3', 10);
     await prisma.user.create({
       data: {
-        username: 'ilsa_faust',
+        username: 'User-agent1',
         password: agentPassword,
         role: 'AGENT'
       }
@@ -62,27 +62,34 @@ async function seedDatabase() {
   } finally {
     await prisma.$disconnect();
   }
+
+  const { username, password } = req.body;
+
+  // Ensure username and password are defined
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
+  }
+
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: {
+      username: username,
+    },
+  });
+
+  // Check if user exists and password matches
+  if (!user || user.password !== password) {
+    return res.status(401).json({ message: "Login failed" });
+  }
+
+  // Continue with your login logic
 }
 
-seedDatabase();
-
-const { username, password } = req.body;
-
-// Ensure username and password are defined
-if (!username || !password) {
-  return res.status(400).json({ message: "Username and password are required" });
-}
-
-// Find user
-const user = await prisma.user.findUnique({
-  where: {
-    username: username,
-  },
-});
-
-// Check if user exists and password matches
-if (!user || user.password !== password) {
-  return res.status(401).json({ message: "Login failed" });
-}
-
-// Continue with your login logic
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
